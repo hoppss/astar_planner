@@ -53,6 +53,8 @@ void Astar::setCostmap(nav2_costmap_2d::Costmap2D * costmap)
       graph_.emplace_back(getIndex(i, j), i, j, v);
     }
   }
+
+  initNeighborhood(motion_model_);   // need xs_
 }
 
 float Astar::interpretCost(int i, int j, nav2_costmap_2d::Costmap2D * costmap)
@@ -146,14 +148,14 @@ bool Astar::createPath(
 
 
   // 中间变量
-  unsigned int i = 0;  // cnt iterate number
+  unsigned int iterations = 0;  // cnt iterate number
   bool find_path = false;
 
   NodePtr current;
 
   // 主循环
   while (!open_list_.empty()) {
-    i++;
+    iterations++;
     // get top node and mark close_lists
     current = open_list_.top();
     open_list_.pop();
@@ -213,7 +215,7 @@ bool Astar::createPath(
   }  // while
 
   if (find_path) {
-    std::cout << "FIND GOAL! iterations cnt " << i << std::endl;
+    std::cout << "FIND GOAL! iterations " << iterations << std::endl;
 
     std::vector<Eigen::Vector2i> path_reverse;
     if (!backtracePath(end_ptr, path_reverse)) {
@@ -229,6 +231,8 @@ bool Astar::createPath(
     visualize();
 
     return true;
+  } else {
+    std::cerr << "NOT FIND GOAL!" << iterations << std::endl;;
   }
 
   return false;
@@ -272,9 +276,11 @@ nav_msgs::msg::OccupancyGrid Astar::visualize()
       // std::cout << "i: " << i << ", j:" << j << std::endl;
       int id = getIndex(i, j);
       if (graph_[id].wasQueued()) {
-        map.data[id] = 99;
+        map.data[id] = 60;
       } else if (graph_[id].wasVisited()) {
         map.data[id] = 0;
+      } else if (graph_[id].getCost() == OCCUPIED) {
+        map.data[id] = 100;
       }
     }
   }
