@@ -26,10 +26,16 @@ void AstarPlanner::configure(
   //   node_, name_ + ".interpolation_resolution", rclcpp::ParameterValue(
   //     0.1));
   // node_->get_parameter(name_ + ".interpolation_resolution", interpolation_resolution_);
+
+  vis_map_pub_ =
+    node_->create_publisher<nav_msgs::msg::OccupancyGrid>(
+    "astar_vis_map",
+    rclcpp::QoS(rclcpp::KeepLast(1)).transient_local().reliable());
 }
 
 void AstarPlanner::cleanup()
 {
+  vis_map_pub_.reset();
   RCLCPP_INFO(
     node_->get_logger(), "CleaningUp plugin %s of type NavfnPlanner",
     name_.c_str());
@@ -37,6 +43,7 @@ void AstarPlanner::cleanup()
 
 void AstarPlanner::activate()
 {
+  vis_map_pub_->on_activate();
   RCLCPP_INFO(
     node_->get_logger(), "Activating plugin %s of type NavfnPlanner",
     name_.c_str());
@@ -44,6 +51,7 @@ void AstarPlanner::activate()
 
 void AstarPlanner::deactivate()
 {
+  vis_map_pub_->on_deactivate();
   RCLCPP_INFO(
     node_->get_logger(), "Deactivating plugin %s of type NavfnPlanner",
     name_.c_str());
@@ -53,7 +61,7 @@ nav_msgs::msg::Path AstarPlanner::createPlan(
   const geometry_msgs::msg::PoseStamped & start,
   const geometry_msgs::msg::PoseStamped & goal)
 {
-  std::chrono::steady_clock::time_point a =std::chrono::steady_clock::now();
+  std::chrono::steady_clock::time_point a = std::chrono::steady_clock::now();
 
   // reget costmap size info
   astar_.setCostmap(costmap_);
@@ -65,7 +73,8 @@ nav_msgs::msg::Path AstarPlanner::createPlan(
 
   // Checking if the goal and start state is in the global frame
   if (start.header.frame_id != global_frame_ || goal.header.frame_id != global_frame_) {
-    RCLCPP_ERROR(node_->get_logger(), "Planner will only except start position from %s frame",
+    RCLCPP_ERROR(
+      node_->get_logger(), "Planner will only except start position from %s frame",
       global_frame_.c_str());
     return plan;
   }
@@ -99,8 +108,13 @@ nav_msgs::msg::Path AstarPlanner::createPlan(
 
   plan.poses.push_back(goal);
 
+  nav_msgs::msg::OccupancyGrid search_vis = astar_.visualize();
+  search_vis.header.stamp = node_->now();
+  vis_map_pub_->publish(search_vis);
+
   std::chrono::steady_clock::time_point b = std::chrono::steady_clock::now();
-  std::chrono::duration<double> time_span = std::chrono::duration_cast<std::chrono::duration<double>>(b - a);
+  std::chrono::duration<double> time_span =
+    std::chrono::duration_cast<std::chrono::duration<double>>(b - a);
   std::cout << "Astar used " << time_span.count() * 1000 << " milliseconds" << std::endl;
 
   return plan;

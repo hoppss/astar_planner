@@ -12,6 +12,8 @@ Astar::Astar()
 
   // motion_model_ = MotionModel::VON_NEUMANN;     // 4 - connect
   motion_model_ = MotionModel::MOORE;        // 8 - connect
+
+  initNeighborhood(motion_model_);   // motion_model and traversal cost
 }
 
 Astar::~Astar()
@@ -29,15 +31,11 @@ void Astar::setCostmap(nav2_costmap_2d::Costmap2D * costmap)
   clearQueue();
 
   // reset Graph
-  {
-    Graph g;
-    std::swap(graph_, g);
-    graph_.reserve(100000);
-  }
-
-  // create Graph, init all grids as Node object
+  graph_.clear();
   graph_.reserve(ns_);
 
+
+  // create Graph, init all grids as Node object
   for (int j = 0; j < ys_; ++j) {
     for (int i = 0; i < xs_; ++i) {
 
@@ -55,21 +53,20 @@ void Astar::setCostmap(nav2_costmap_2d::Costmap2D * costmap)
       graph_.emplace_back(getIndex(i, j), i, j, v);
     }
   }
-
-  initNeighborhood(motion_model_); // motion_model and traversal cost
 }
 
 float Astar::interpretCost(int i, int j, nav2_costmap_2d::Costmap2D * costmap)
 {
   // int index = j * xs_ + i;
-  if (allow_unknown_ && costmap->getCost(i, j) == UNKNOWN) {
+  float cost = static_cast<float>(costmap->getCost(i, j));
+  if (allow_unknown_ && cost == UNKNOWN) {
     return MAX_NON_OBSTACLE;
-  } else if (!allow_unknown_ && costmap->getCost(i, j) == UNKNOWN) {
+  } else if (!allow_unknown_ && cost == UNKNOWN) {
     return OCCUPIED;
-  } else if (costmap->getCost(i, j) == INSCRIBED) {
+  } else if (cost == INSCRIBED) {
     return OCCUPIED;
   } else {
-    return static_cast<float>(costmap->getCost(i, j));
+    return cost;
   }
 }
 
@@ -157,8 +154,6 @@ bool Astar::createPath(
   // 主循环
   while (!open_list_.empty()) {
     i++;
-    std::cout << "astar " << i << std::endl;
-
     // get top node and mark close_lists
     current = open_list_.top();
     open_list_.pop();
@@ -215,7 +210,6 @@ bool Astar::createPath(
       }
     }
 
-
   }  // while
 
   if (find_path) {
@@ -231,6 +225,8 @@ bool Astar::createPath(
         path.push_back(path_reverse[i]);
       }
     }
+
+    visualize();
 
     return true;
   }
@@ -255,5 +251,35 @@ bool Astar::backtracePath(NodePtr goal, std::vector<Eigen::Vector2i> & path)
   return path.size() > 0;
 }
 
+nav_msgs::msg::OccupancyGrid Astar::visualize()
+{
+
+  nav_msgs::msg::OccupancyGrid map;
+  map.header.frame_id = "map";
+
+  map.info.height = costmap_->getSizeInCellsY();
+  map.info.width = costmap_->getSizeInCellsX();
+  map.info.resolution = costmap_->getResolution();
+  map.info.origin.position.x = costmap_->getOriginX();
+  map.info.origin.position.y = costmap_->getOriginY();
+  map.info.origin.position.z = 0.0;
+  map.info.origin.orientation.w = 1.0;
+  //  map.data.resize(map.info.width * map.info.height);
+  map.data.assign(map.info.width * map.info.height, -1);   // set all to unknow
+
+  for (int j = 0; j < map.info.height; ++j) {
+    for (int i = 0; i < map.info.width; ++i) {
+      // std::cout << "i: " << i << ", j:" << j << std::endl;
+      int id = getIndex(i, j);
+      if (graph_[id].wasQueued()) {
+        map.data[id] = 99;
+      } else if (graph_[id].wasVisited()) {
+        map.data[id] = 0;
+      }
+    }
+  }
+
+  return map;
+}
 
 } // namespace

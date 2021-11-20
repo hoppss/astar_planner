@@ -10,6 +10,7 @@
 #include <algorithm>
 
 #include "nav2_costmap_2d/costmap_2d.hpp"
+#include "nav_msgs/msg/occupancy_grid.hpp"
 
 #include "astar_planner/node.hpp"
 
@@ -22,27 +23,34 @@ public:
   Astar();
   ~Astar();
 
-  void setCostmap(nav2_costmap_2d::Costmap2D *costmap);
-  void initNeighborhood(const MotionModel& model);
+  void setCostmap(nav2_costmap_2d::Costmap2D * costmap);
+  void initNeighborhood(const MotionModel & model);
 
-  float interpretCost(int i, int j, nav2_costmap_2d::Costmap2D* costmap);
+  float interpretCost(int i, int j, nav2_costmap_2d::Costmap2D * costmap);
 
-  bool createPath(const Eigen::Vector2i & start, const Eigen::Vector2i & end, std::vector<Eigen::Vector2i>& path);
+  bool createPath(
+    const Eigen::Vector2i & start, const Eigen::Vector2i & end,
+    std::vector<Eigen::Vector2i> & path);
 
-  bool backtracePath(NodePtr goal, std::vector<Eigen::Vector2i>& path);
+  bool backtracePath(NodePtr goal, std::vector<Eigen::Vector2i> & path);
 
 
-  inline int getIndex(int i, int j) {
+  inline int getIndex(int i, int j)
+  {
     return i + j * xs_;
   }
 
-  inline int getIndex(const Eigen::Vector2i& pose) {
+  inline int getIndex(const Eigen::Vector2i & pose)
+  {
     return pose(0) + pose(1) * xs_;
   }
 
   void clearQueue();
 
   float getHeuristicCost(const NodePtr from, const NodePtr & to);
+
+    // vis, get a costmap to show openlist and closelist
+  nav_msgs::msg::OccupancyGrid visualize();
 
 
 private:
@@ -57,6 +65,10 @@ private:
   MotionModel motion_model_;
   NeighborsModelVector neighbors_grid_offsets_;
   std::vector<float> neighbors_traversal_cost_;
+
+
+
+
 };
 
 }  // namespace
