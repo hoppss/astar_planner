@@ -140,10 +140,11 @@ bool Astar::createPath(
   clearQueue();
 
   // 起点, 加入graph 和 openlist
-  NodePtr start_ptr =  &(graph_[start_i]);
-  NodePtr end_ptr  = &(graph_[end_i]);
+  NodePtr start_ptr = &(graph_[start_i]);
+  NodePtr end_ptr = &(graph_[end_i]);
 
   start_ptr->update(0.0, getHeuristicCost(start_ptr, end_ptr));  // update g+h
+  start_ptr->queued();  // 表明加入openlist
   open_list_.push(start_ptr);
 
 
@@ -181,16 +182,35 @@ bool Astar::createPath(
       int t_i = current->getIndex() + neighbors_grid_offsets_[i];
       if (t_i < ns_ && t_i >= 0) {
         tmp = &(graph_[t_i]);
-        if (tmp->wasVisited() || tmp->getCost() >= OCCUPIED) {
-          continue;  // 已经在close_list, 或者是障碍物， 忽略
-        } else {
-          float tmp_g = current->G() + neighbors_traversal_cost_[i];
-          if (tmp->G() > tmp_g) {
-            tmp->update(tmp_g, getHeuristicCost(tmp, end_ptr));
-            tmp->parent_ = current;
-            // neighbor_ptr.push_back(tmp);
-            open_list_.push(tmp);
-          }
+        // if (tmp->wasVisited() || tmp->getCost() >= OCCUPIED) {
+        //   continue;  // 已经在close_list, 或者是障碍物， 忽略
+        // } else {
+        //   float tmp_g = current->G() + neighbors_traversal_cost_[i];
+        //   if (tmp->G() > tmp_g) {
+        //     tmp->update(tmp_g, getHeuristicCost(tmp, end_ptr));
+        //     tmp->parent_ = current;
+        //     // neighbor_ptr.push_back(tmp);
+        //     if(!tmp->wasQueued()) {
+        //       open_list_.push(tmp);
+        //       tmp->queued();
+        //     } else {
+        //       std::cerr << "!! in openlist ,do not put into openlist" << std::endl;
+        //     }
+        //   }
+        // }
+
+        if (tmp->getCost() >= OCCUPIED) {continue;}
+
+        float tmp_g = current->G() + neighbors_traversal_cost_[i];
+
+        if (tmp->wasUnknown()) {
+          tmp->update(tmp_g, getHeuristicCost(tmp, end_ptr));
+          tmp->parent_ = current;
+          open_list_.push(tmp);
+          tmp->queued();
+        } else if (tmp->wasQueued() && tmp->G() > tmp_g) {
+          tmp->update(tmp_g, getHeuristicCost(tmp, end_ptr));
+          tmp->parent_ = current;
         }
       }
     }
@@ -200,19 +220,23 @@ bool Astar::createPath(
 
   if (find_path) {
     std::cout << "FIND GOAL! iterations cnt " << i << std::endl;
-  }
-  std::vector<Eigen::Vector2i> path_reverse;
-  if (!backtracePath(end_ptr, path_reverse)) {
-    std::cout << "FATAL ERROR, find path but backtrace path field" << std::endl;
-    return false;
-  } else {
-    path.clear();
-    for (int i = path_reverse.size() - 1; i >= 0; i--) {
-      path.push_back(path_reverse[i]);
+
+    std::vector<Eigen::Vector2i> path_reverse;
+    if (!backtracePath(end_ptr, path_reverse)) {
+      std::cout << "FATAL ERROR, find path but backtrace path field" << std::endl;
+      return false;
+    } else {
+      path.clear();
+      for (int i = path_reverse.size() - 1; i >= 0; i--) {
+        path.push_back(path_reverse[i]);
+      }
     }
+
+    return true;
   }
 
-  return true;
+  return false;
+
 }
 
 bool Astar::backtracePath(NodePtr goal, std::vector<Eigen::Vector2i> & path)

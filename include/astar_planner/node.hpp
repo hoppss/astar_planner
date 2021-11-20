@@ -69,7 +69,7 @@ public:
     f_ = g_ = std::numeric_limits<float>::max();
     h_ = 0.0;
 
-    was_visited_ = false;
+    type_ = LISTYPE::UNKNOW;
 
     float weight_g_ = 1.0;   // weight of accumulate cost
     float weight_h_ = 1.0;   // weight of heuristic cost
@@ -97,14 +97,26 @@ public:
     cell_cost_ = cost;
   }
 
-  inline bool & wasVisited()
+  inline bool wasVisited()
   {
-    return was_visited_;
+    return type_ == LISTYPE::CLOSELIST;
   }
 
   inline void visited()
   {
-    was_visited_ = true;
+    type_ = LISTYPE::CLOSELIST;
+  }
+
+  inline void queued(){
+    type_ = LISTYPE::OPENLIST;
+  }
+
+  inline bool wasQueued() {
+    return type_ == LISTYPE::OPENLIST;
+  }
+
+  inline bool wasUnknown() {
+    return type_ == LISTYPE::UNKNOW;
   }
 
   inline Eigen::Vector2i getCoord()
@@ -160,7 +172,7 @@ private:
   float g_;     // accumulated_cost
   float h_;     // heuristic
 
-  bool was_visited_;  // true, indicate status in close_list
+  LISTYPE type_;  // default is UNKOWN;
 
   float weight_g_;
   float weight_h_;
@@ -171,9 +183,11 @@ class NodeComparator
 public:
   bool operator()(const NodePtr & a, const NodePtr & b) const
   {
-    if (a->F() > b->F()) {return true;} else {
-      return a->H() > b->H();
-    }
+    // if (a->F() > b->F()) {return true;} else {
+    //   return a->G() > b->G();
+    // }
+
+    return a->F() > b->F();
   }
 };
 
