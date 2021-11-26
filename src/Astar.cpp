@@ -196,7 +196,7 @@ bool Astar::createPath(
         //   }
         // }
 
-        if (tmp->getCost() >= OCCUPIED) {continue;}
+        if (tmp->getCost() >= OCCUPIED || tmp->wasVisited()) {continue;}
 
         float tmp_g = current->G() + neighbors_traversal_cost_[i];
 
