@@ -1,0 +1,9 @@
+astar
+
+
+traditional astar algrithom
+
+
+main branch is grid-base not cost-aware;
+this is plugin planner is based ros2 foxy version
+/astar_vis_map [nav_msgs/msg/OccupancyGrid]  to visulization openlist and closelist
