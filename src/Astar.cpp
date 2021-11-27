@@ -116,7 +116,7 @@ float Astar::getHeuristicCost(const NodePtr from, const NodePtr & to)
   // return std::hypot(dx, dy);
 
   // diagnose L2
-  return sqrt2_2 * std::min(dx, dy) + dx + dy;
+  return (sqrt2_2 * std::min(dx, dy) + dx + dy) * NEUTRAL_COST;
 }
 
 
@@ -183,7 +183,7 @@ bool Astar::createPath(
 
         if (tmp->getCost() >= OCCUPIED || tmp->wasVisited()) {continue;}
 
-        float tmp_g = current->G() + neighbors_cost[i];
+        float tmp_g = current->G() + neighbors_cost[i] + tmp->getCost() * COST_FACTOR + NEUTRAL_COST;
 
         if (tmp->wasUnknown()) {
           tmp->update(tmp_g, getHeuristicCost(tmp, end_ptr));
@@ -248,21 +248,21 @@ void Astar::expansiionNeighbors(
 
   if (current_index - xs_ >= 0) {
     neighbors_index.push_back(current_index - xs_);       // up
-    neighbors_cost.push_back(1.0);
+    neighbors_cost.push_back(10.0);
   }
   if (current_index + xs_ < ns_) {
     neighbors_index.push_back(current_index + xs_);     //down
-    neighbors_cost.push_back(1.0);
+    neighbors_cost.push_back(10.0);
 
   }
   if (current_index - 1 >= 0 && (current_index - 1 + 1) % xs_ != 0) {
     neighbors_index.push_back(current_index - 1);        //left
-    neighbors_cost.push_back(1.0);
+    neighbors_cost.push_back(10.0);
 
   }
   if (current_index + 1 < ns_ && (current_index + 1 ) % xs_ != 0) {
     neighbors_index.push_back(current_index + 1);                   //right
-    neighbors_cost.push_back(1.0);
+    neighbors_cost.push_back(10.0);
   }
 
 
@@ -271,28 +271,28 @@ void Astar::expansiionNeighbors(
     (current_index - xs_ - 1 + 1) % xs_ != 0)
   {
     neighbors_index.push_back(current_index - xs_ - 1); //left_up
-    neighbors_cost.push_back(sqrt2);
+    neighbors_cost.push_back(sqrt2_10);
   }
 
   if (current_index + xs_ - 1 < ns_ &&
     (current_index + xs_ - 1 + 1) % xs_ != 0)
   {
     neighbors_index.push_back(current_index + xs_ - 1); //left_down
-    neighbors_cost.push_back(sqrt2);
+    neighbors_cost.push_back(sqrt2_10);
   }
 
   if (current_index + xs_ + 1 < ns_ &&
     (current_index + xs_ + 1 ) % xs_ != 0)
   {
     neighbors_index.push_back(current_index + xs_ + 1); //right_down
-    neighbors_cost.push_back(sqrt2);
+    neighbors_cost.push_back(sqrt2_10);
   }
 
   if (current_index - xs_ + 1 >= 0 &&
     (current_index - xs_ + 1 ) % xs_ != 0)
   {
     neighbors_index.push_back(current_index - xs_ + 1); //right_up
-    neighbors_cost.push_back(sqrt2);
+    neighbors_cost.push_back(sqrt2_10);
   }
 }
 

@@ -23,6 +23,10 @@ const float INSCRIBED = 253;
 const float MAX_NON_OBSTACLE = 252;
 const float FREE = 0;
 
+const float NEUTRAL_COST = 50.0;
+const float COST_FACTOR = 0.8;
+const float sqrt2_10 = 14.14;
+
 typedef unsigned char COSTTYPE;
 
 class Node;
