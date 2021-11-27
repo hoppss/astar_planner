@@ -13,7 +13,7 @@ Astar::Astar()
   // motion_model_ = MotionModel::VON_NEUMANN;     // 4 - connect
   motion_model_ = MotionModel::MOORE;        // 8 - connect
 
-  initNeighborhood(motion_model_);   // motion_model and traversal cost
+  // initNeighborhood(motion_model_);   // motion_model and traversal cost
 }
 
 Astar::~Astar()
@@ -40,21 +40,21 @@ void Astar::setCostmap(nav2_costmap_2d::Costmap2D * costmap)
     for (int i = 0; i < xs_; ++i) {
 
       float v = OCCUPIED;
-      if (j == 0 || i == 0 || i == xs_ - 1 || j == ys_ - 1) {
-        // outline costmap edge
-        // j = 0 下边第一行
-        // i = 0 左边第一列
-        // i = xs - 1  最后一列
-        // j = ys - 1  最上一行
-        v = OCCUPIED;
-      } else {
-        v = interpretCost(i, j, costmap_);
-      }
+      // if (j == 0 || i == 0 || i == xs_ - 1 || j == ys_ - 1) {
+      //   // outline costmap edge
+      //   // j = 0 下边第一行
+      //   // i = 0 左边第一列
+      //   // i = xs - 1  最后一列
+      //   // j = ys - 1  最上一行
+      //   v = OCCUPIED;
+      // } else {
+      v = interpretCost(i, j, costmap_);
+      // }
       graph_.emplace_back(getIndex(i, j), i, j, v);
     }
   }
 
-  initNeighborhood(motion_model_);   // need xs_
+  // initNeighborhood(motion_model_);   // need xs_
 }
 
 float Astar::interpretCost(int i, int j, nav2_costmap_2d::Costmap2D * costmap)
@@ -73,31 +73,31 @@ float Astar::interpretCost(int i, int j, nav2_costmap_2d::Costmap2D * costmap)
 }
 
 
-void Astar::initNeighborhood(const MotionModel & model)
-{
-  neighbors_grid_offsets_.clear();
-  neighbors_traversal_cost_.clear();
+// void Astar::initNeighborhood(const MotionModel & model)
+// {
+//   neighbors_grid_offsets_.clear();
+//   neighbors_traversal_cost_.clear();
 
-  switch (model) {
-    case MotionModel::UNKNOWN:
-      throw std::runtime_error("Unknown neighborhood type selected.");
-    case MotionModel::VON_NEUMANN:
-      neighbors_grid_offsets_ = {-1, +1, -xs_, +xs_};
-      neighbors_traversal_cost_ = {1.0, 1.0, 1.0, 1.0};
-      assert(neighbors_grid_offsets_.size() == neighbors_traversal_cost_.size());
-      break;
-    case MotionModel::MOORE:
-      neighbors_grid_offsets_ = {-1, +1, -xs_, +xs_, -xs_ - 1,
-        -xs_ + 1, +xs_ - 1, +xs_ + 1};
-      neighbors_traversal_cost_ = {1.0, 1.0, 1.0, 1.0, sqrt2, sqrt2, sqrt2, sqrt2};
-      assert(neighbors_grid_offsets_.size() == neighbors_traversal_cost_.size());
-      break;
-    default:
-      throw std::runtime_error(
-              "Invalid neighborhood type selected. "
-              "Von-Neumann and Moore are valid for Node2D.");
-  } // switch
-}
+//   switch (model) {
+//     case MotionModel::UNKNOWN:
+//       throw std::runtime_error("Unknown neighborhood type selected.");
+//     case MotionModel::VON_NEUMANN:
+//       neighbors_grid_offsets_ = {-1, +1, -xs_, +xs_};
+//       neighbors_traversal_cost_ = {1.0, 1.0, 1.0, 1.0};
+//       assert(neighbors_grid_offsets_.size() == neighbors_traversal_cost_.size());
+//       break;
+//     case MotionModel::MOORE:
+//       neighbors_grid_offsets_ = {-1, +1, -xs_, +xs_, -xs_ - 1,
+//         -xs_ + 1, +xs_ - 1, +xs_ + 1};
+//       neighbors_traversal_cost_ = {1.0, 1.0, 1.0, 1.0, sqrt2, sqrt2, sqrt2, sqrt2};
+//       assert(neighbors_grid_offsets_.size() == neighbors_traversal_cost_.size());
+//       break;
+//     default:
+//       throw std::runtime_error(
+//               "Invalid neighborhood type selected. "
+//               "Von-Neumann and Moore are valid for Node2D.");
+//   } // switch
+// }
 
 
 void Astar::clearQueue()
@@ -169,36 +169,21 @@ bool Astar::createPath(
     }
 
     // get neighbors / update /
-
-    // std::vector<int> neighbor_i;
-    // std::vector<float> neighbor_cost;
-    // std::vector<NodePtr> neighbor_ptr;
     NodePtr tmp;
+    std::vector<int> neighbors_index;
+    std::vector<float> neighbors_cost;
+    expansiionNeighbors(current->getIndex(), neighbors_index, neighbors_cost);
 
-    for (int i = 0; i < neighbors_grid_offsets_.size(); ++i) {
-      int t_i = current->getIndex() + neighbors_grid_offsets_[i];
+    assert(neighbors_index.size() == neighbors_cost.size());
+
+    for (int i = 0; i < neighbors_index.size(); ++i) {
+      int t_i = neighbors_index[i];
       if (t_i < ns_ && t_i >= 0) {
         tmp = &(graph_[t_i]);
-        // if (tmp->wasVisited() || tmp->getCost() >= OCCUPIED) {
-        //   continue;  // 已经在close_list, 或者是障碍物， 忽略
-        // } else {
-        //   float tmp_g = current->G() + neighbors_traversal_cost_[i];
-        //   if (tmp->G() > tmp_g) {
-        //     tmp->update(tmp_g, getHeuristicCost(tmp, end_ptr));
-        //     tmp->parent_ = current;
-        //     // neighbor_ptr.push_back(tmp);
-        //     if(!tmp->wasQueued()) {
-        //       open_list_.push(tmp);
-        //       tmp->queued();
-        //     } else {
-        //       std::cerr << "!! in openlist ,do not put into openlist" << std::endl;
-        //     }
-        //   }
-        // }
 
         if (tmp->getCost() >= OCCUPIED || tmp->wasVisited()) {continue;}
 
-        float tmp_g = current->G() + neighbors_traversal_cost_[i];
+        float tmp_g = current->G() + neighbors_cost[i];
 
         if (tmp->wasUnknown()) {
           tmp->update(tmp_g, getHeuristicCost(tmp, end_ptr));
@@ -211,7 +196,6 @@ bool Astar::createPath(
         }
       }
     }
-
   }  // while
 
   if (find_path) {
@@ -232,7 +216,7 @@ bool Astar::createPath(
 
     return true;
   } else {
-    std::cerr << "NOT FIND GOAL!" << iterations << std::endl;;
+    std::cerr << "NOT FIND GOAL!" << iterations << std::endl;
   }
 
   return false;
@@ -253,6 +237,63 @@ bool Astar::backtracePath(NodePtr goal, std::vector<Eigen::Vector2i> & path)
   }
 
   return path.size() > 0;
+}
+
+void Astar::expansiionNeighbors(
+  const int & current_index, std::vector<int> & neighbors_index,
+  std::vector<float> & neighbors_cost)
+{
+  neighbors_index.clear();
+  neighbors_cost.clear();
+
+  if (current_index - xs_ >= 0) {
+    neighbors_index.push_back(current_index - xs_);       // up
+    neighbors_cost.push_back(1.0);
+  }
+  if (current_index + xs_ < ns_) {
+    neighbors_index.push_back(current_index + xs_);     //down
+    neighbors_cost.push_back(1.0);
+
+  }
+  if (current_index - 1 >= 0 && (current_index - 1 + 1) % xs_ != 0) {
+    neighbors_index.push_back(current_index - 1);        //left
+    neighbors_cost.push_back(1.0);
+
+  }
+  if (current_index + 1 < ns_ && (current_index + 1 ) % xs_ != 0) {
+    neighbors_index.push_back(current_index + 1);                   //right
+    neighbors_cost.push_back(1.0);
+  }
+
+
+  // diagnose
+  if (current_index - xs_ - 1 >= 0 &&
+    (current_index - xs_ - 1 + 1) % xs_ != 0)
+  {
+    neighbors_index.push_back(current_index - xs_ - 1); //left_up
+    neighbors_cost.push_back(sqrt2);
+  }
+
+  if (current_index + xs_ - 1 < ns_ &&
+    (current_index + xs_ - 1 + 1) % xs_ != 0)
+  {
+    neighbors_index.push_back(current_index + xs_ - 1); //left_down
+    neighbors_cost.push_back(sqrt2);
+  }
+
+  if (current_index + xs_ + 1 < ns_ &&
+    (current_index + xs_ + 1 ) % xs_ != 0)
+  {
+    neighbors_index.push_back(current_index + xs_ + 1); //right_down
+    neighbors_cost.push_back(sqrt2);
+  }
+
+  if (current_index - xs_ + 1 >= 0 &&
+    (current_index - xs_ + 1 ) % xs_ != 0)
+  {
+    neighbors_index.push_back(current_index - xs_ + 1); //right_up
+    neighbors_cost.push_back(sqrt2);
+  }
 }
 
 nav_msgs::msg::OccupancyGrid Astar::visualize()

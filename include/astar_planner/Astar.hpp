@@ -24,7 +24,7 @@ public:
   ~Astar();
 
   void setCostmap(nav2_costmap_2d::Costmap2D * costmap);
-  void initNeighborhood(const MotionModel & model);
+  // void initNeighborhood(const MotionModel & model);
 
   float interpretCost(int i, int j, nav2_costmap_2d::Costmap2D * costmap);
 
@@ -45,13 +45,16 @@ public:
     return pose(0) + pose(1) * xs_;
   }
 
+  void expansiionNeighbors(
+    const int & current_index, std::vector<int> & neighbors_index,
+    std::vector<float> & neighbors_cost);
+
   void clearQueue();
 
   float getHeuristicCost(const NodePtr from, const NodePtr & to);
 
-    // vis, get a costmap to show openlist and closelist
+  // vis, get a costmap to show openlist and closelist
   nav_msgs::msg::OccupancyGrid visualize();
-
 
 private:
   nav2_costmap_2d::Costmap2D * costmap_;
@@ -63,10 +66,8 @@ private:
   Graph graph_;
   NodeQueue open_list_;
   MotionModel motion_model_;
-  NeighborsModelVector neighbors_grid_offsets_;
-  std::vector<float> neighbors_traversal_cost_;
-
-
+  // NeighborsModelVector neighbors_grid_offsets_;
+  // std::vector<float> neighbors_traversal_cost_;
 
 
 };
