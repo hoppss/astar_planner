@@ -112,6 +112,9 @@ float Astar::getHeuristicCost(const NodePtr from, const NodePtr & to)
   float dx = std::abs(to->getCoordX() - from->getCoordX());
   float dy = std::abs(to->getCoordY() - from->getCoordY());
 
+  // manhadun
+  // return dx + dy;
+
   // L2
   // return std::hypot(dx, dy);
 
