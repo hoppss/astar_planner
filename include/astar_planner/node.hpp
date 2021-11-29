@@ -71,8 +71,8 @@ public:
 
     type_ = LISTYPE::UNKNOW;
 
-    float weight_g_ = 1.0;   // weight of accumulate cost
-    float weight_h_ = 1.0;   // weight of heuristic cost
+    weight_g_ = 1.0;   // weight of accumulate cost
+    weight_h_ = 1.0;   // weight of heuristic cost
   }
 
   ~Node() = default;
